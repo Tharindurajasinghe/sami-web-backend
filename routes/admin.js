@@ -16,16 +16,26 @@ router.get('/orders', async (_req, res) => {
 });
 
 // PATCH /api/admin/orders/:id/status — update order status
+// Body: { status, rejectionMsg? }
 router.patch('/orders/:id/status', async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, rejectionMsg } = req.body;   // ← NEW: accept rejectionMsg
+
     const valid = ['pending', 'confirmed', 'rejected', 'complete'];
     if (!valid.includes(status))
       return res.status(400).json({ message: 'Invalid status' });
 
+    // Build update object — only set rejectionMsg when status is rejected
+    const update = { status };
+    if (status === 'rejected') {
+      update.rejectionMsg = rejectionMsg?.trim() || '';   // ← NEW
+    } else {
+      update.rejectionMsg = '';   // clear it if status changes away from rejected
+    }
+
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status },
+      update,
       { new: true }
     );
     if (!order) return res.status(404).json({ message: 'Order not found' });

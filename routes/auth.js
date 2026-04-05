@@ -47,6 +47,8 @@ router.post('/login', async (req, res) => {
 });
 
 // ── POST /api/auth/admin-login ────────────────────────────────────────────────
+// Bug 2 fix: token now includes a stable `id` field so that req.user.id is
+// never undefined in the protect middleware or any admin route handler.
 router.post('/admin-login', async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -55,8 +57,9 @@ router.post('/admin-login', async (req, res) => {
     if (password !== process.env.ADMIN_PASSWORD)
       return res.status(401).json({ message: 'Invalid admin credentials' });
 
-    const token = sign({ phone, isAdmin: true });
-    res.json({ token, user: { phone, isAdmin: true } });
+    // 'admin' is used as a fixed id — no DB row exists for the admin account
+    const token = sign({ id: 'admin', phone, isAdmin: true });
+    res.json({ token, user: { id: 'admin', phone, isAdmin: true } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

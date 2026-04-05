@@ -12,16 +12,41 @@ const adminRoutes    = require('./routes/admin');
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+// ── Bug 3 fix: CORS ───────────────────────────────────────────────────────────
+// Build the allowed-origins list from FRONTEND_URL env var.
+// Warns clearly at startup if FRONTEND_URL is not set (would block production).
+const allowedOrigins = [
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:3000',  // CRA dev server (fallback)
+];
+
+if (process.env.FRONTEND_URL) {
+  // Only add if it is not already in the list (avoids duplicating localhost)
+  if (!allowedOrigins.includes(process.env.FRONTEND_URL)) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+} else {
+  console.warn(
+    '⚠️  FRONTEND_URL is not set in .env — only localhost origins are allowed.\n' +
+    '   Set FRONTEND_URL to your deployed frontend URL in production.'
+  );
+}
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:5173',
-    'http://localhost:3000',
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error(`Origin ${origin} is not allowed by CORS policy`));
+    }
+  },
   credentials: true,
 }));
-app.use(express.json({ limit: '2mb' }));   // 2MB for base64 images
+
+app.use(express.json({ limit: '2mb' }));   // 2 MB for base64 images
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI)
@@ -44,4 +69,7 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ message: err.message || 'Server error' });
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`   Allowed CORS origins: ${allowedOrigins.join(', ')}`);
+});
