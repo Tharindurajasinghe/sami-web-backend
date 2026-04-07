@@ -21,6 +21,19 @@ router.post('/', protect, adminOnly, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// PUT /api/categories/:id — admin only
+router.put('/:id', protect, adminOnly, async (req, res) => {
+  try {
+    const { name, nameSi, image } = req.body;
+    if (!name?.trim()) return res.status(400).json({ message: 'Name required' });
+    const update = { name: name.trim(), nameSi: nameSi?.trim() || '' };
+    if (image !== undefined) update.image = image;   // only update image if sent
+    const cat = await Category.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!cat) return res.status(404).json({ message: 'Category not found' });
+    res.json(cat);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // DELETE /api/categories/:id — admin only
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
