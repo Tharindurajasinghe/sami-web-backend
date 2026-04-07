@@ -10,11 +10,12 @@ router.post('/', protect, async (req, res) => {
     if (!items?.length || !total || !address || !phone)
       return res.status(400).json({ message: 'items, total, address, phone required' });
 
-    const order = await Order.create({
+   const order = await Order.create({
       userPhone: req.user.phone,
+      customerName: req.user.fullName || '',
       items, total, address, phone,
       message: message || '',
-    });
+    })
     res.status(201).json(order);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

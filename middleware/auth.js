@@ -11,7 +11,12 @@ async function protect(req, res, next) {
   try {
     const token   = header.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.id, phone: decoded.phone, isAdmin: decoded.isAdmin };
+    req.user = {
+      id: decoded.id,
+      phone: decoded.phone,
+      isAdmin: decoded.isAdmin,
+      fullName: decoded.fullName || '',
+    };
     next();
   } catch {
     res.status(401).json({ message: 'Invalid or expired token' });

@@ -16,6 +16,7 @@ const orderSchema = new mongoose.Schema({
   // Which registered user placed the order (matched by phone, not ObjectId,
   // because the app links orders to accounts via phone number throughout)
   userPhone: { type: String, required: true, trim: true },
+  customerName: { type: String, default: '', trim: true },
 
   // Snapshot of the cart at checkout time
   items:    { type: [orderItemSchema], required: true },

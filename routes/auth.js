@@ -10,8 +10,11 @@ const sign = (payload) =>
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   try {
-    const { phone, password } = req.body;
-    if (!phone || !password)        return res.status(400).json({ message: 'Phone and password required' });
+    const { phone, password, firstName, lastName } = req.body;
+    if (!phone || !password || !firstName || !lastName)
+      return res.status(400).json({ message: 'All fields are required' });
+    if (!firstName.trim() || !lastName.trim())
+      return res.status(400).json({ message: 'Name cannot be empty' });
     if (password.length < 6)        return res.status(400).json({ message: 'Password must be at least 6 characters' });
     if (!/^\d{9,12}$/.test(phone.replace(/\s/g, '')))
       return res.status(400).json({ message: 'Invalid phone number' });
@@ -19,8 +22,18 @@ router.post('/register', async (req, res) => {
     const exists = await User.findOne({ phone: phone.trim() });
     if (exists) return res.status(409).json({ message: 'Phone already registered' });
 
-    const user  = await User.create({ phone: phone.trim(), password });
-    const token = sign({ id: user._id, phone: user.phone, isAdmin: false });
+    const user = await User.create({
+      phone: phone.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      password,
+    });
+    const token = sign({
+      id: user._id,
+      phone: user.phone,
+      isAdmin: false,
+      fullName: `${user.firstName} ${user.lastName}`,
+    });
     res.status(201).json({ token, user });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -39,7 +52,12 @@ router.post('/login', async (req, res) => {
     const ok = await user.comparePassword(password);
     if (!ok) return res.status(401).json({ message: 'Invalid phone or password' });
 
-    const token = sign({ id: user._id, phone: user.phone, isAdmin: false });
+    const token = sign({
+      id: user._id,
+      phone: user.phone,
+      isAdmin: false,
+      fullName: `${user.firstName} ${user.lastName}`,
+    });
     res.json({ token, user });
   } catch (err) {
     res.status(500).json({ message: err.message });
