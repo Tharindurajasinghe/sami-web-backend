@@ -15,17 +15,25 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   // Which registered user placed the order (matched by phone, not ObjectId,
   // because the app links orders to accounts via phone number throughout)
-  userPhone: { type: String, required: true, trim: true },
+  userPhone:    { type: String, required: true, trim: true },
   customerName: { type: String, default: '', trim: true },
 
   // Snapshot of the cart at checkout time
-  items:    { type: [orderItemSchema], required: true },
-  total:    { type: Number, required: true, min: 0 },
+  items:  { type: [orderItemSchema], required: true },
+  total:  { type: Number, required: true, min: 0 },
 
   // Delivery details supplied by the customer
-  address:  { type: String, required: true, trim: true },
-  phone:    { type: String, required: true, trim: true },
-  message:  { type: String, default: '', trim: true },
+  address: { type: String, required: true, trim: true },
+  phone:   { type: String, required: true, trim: true },
+  message: { type: String, default: '', trim: true },
+
+  // Optional GPS location shared by the customer at checkout time.
+  // Stored as a nested object so both fields arrive or neither does.
+  // null means the customer did not share their location.
+  location: {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+  },
 
   // Order lifecycle status
   // 'pending'   — just placed, waiting for admin action
@@ -38,7 +46,7 @@ const orderSchema = new mongoose.Schema({
     default: 'pending',
   },
 
-  // Bug 5 fix: persists the admin's rejection reason so the customer can see
+  // Persists the admin's rejection reason so the customer can see
   // it on the Track Order page. Cleared automatically if status moves away
   // from 'rejected' (handled in routes/admin.js).
   rejectionMsg: { type: String, default: '', trim: true },
