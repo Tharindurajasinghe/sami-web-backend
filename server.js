@@ -8,6 +8,8 @@ const categoryRoutes = require('./routes/categories');
 const itemRoutes     = require('./routes/items');
 const orderRoutes    = require('./routes/orders');
 const adminRoutes    = require('./routes/admin');
+const customRequestRoutes  = require('./routes/customRequests'); 
+const bannerRoutes        = require('./routes/banner'); 
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -46,7 +48,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '2mb' }));   // 2 MB for base64 images
+app.use(express.json({ limit: '10mb' }));   // 2 MB for base64 images
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI)
@@ -59,6 +61,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/items',      itemRoutes);
 app.use('/api/orders',     orderRoutes);
 app.use('/api/admin',      adminRoutes);
+app.use('/api/custom-requests', customRequestRoutes);
+app.use('/api/banner',          bannerRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => res.json({ status: 'ok', message: 'Shop API running' }));
