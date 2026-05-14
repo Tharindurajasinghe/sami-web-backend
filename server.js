@@ -66,6 +66,7 @@ app.use('/api/banner',          bannerRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => res.json({ status: 'ok', message: 'Shop API running' }));
+app.get('/ping', (_req, res) => res.json({ status: 'ok' }));
 
 // ── Error handler ─────────────────────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
