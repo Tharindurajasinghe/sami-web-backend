@@ -14,6 +14,12 @@ const customRequestSchema = new mongoose.Schema({
   address:  { type: String, default: '', trim: true },
   phone:    { type: String, default: '', trim: true },
 
+  // GPS coordinates — same structure as Order model
+  location: {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+  },
+
   // Lifecycle — same statuses as Order for consistency
   status: {
     type: String,
