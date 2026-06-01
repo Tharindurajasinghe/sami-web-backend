@@ -3,6 +3,13 @@ const router = require('express').Router();
 const Order  = require('../models/Order');
 const { protect } = require('../middleware/auth');
 
+
+// Generates the next readable order ID — e.g. DCC000001
+async function generateOrderId() {
+  const seq = await Counter.next('order');
+  return 'DCC' + String(seq).padStart(6, '0');
+}
+
 // POST /api/orders — authenticated user places order
 router.post('/', protect, async (req, res) => {
   try {

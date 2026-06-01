@@ -15,6 +15,7 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   // Which registered user placed the order (matched by phone, not ObjectId,
   // because the app links orders to accounts via phone number throughout)
+  orderId: { type: String, unique: true, sparse: true },
   userPhone:    { type: String, required: true, trim: true },
   customerName: { type: String, default: '', trim: true },
 
