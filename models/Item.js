@@ -8,7 +8,8 @@ const itemSchema = new mongoose.Schema({
   price:      { type: Number, required: true, min: 0 },
   discount:   { type: Number, default: 0, min: 0, max: 100 },
   available:  { type: Boolean, default: true },
-  image:      { type: String, default: null },
+  image:      { type: String, default: null },   // Cloudinary secure URL (was base64)
+  imagePublicId: { type: String, default: null }, // Cloudinary public_id, needed to delete/replace the image
 }, { timestamps: true });
 
 // Virtual: final price after discount

@@ -4,9 +4,11 @@
 const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema({
-  text:       { type: String,},
-  leftImage:  { type: String, default: '' },   // base64 data URL or public path
-  rightImage: { type: String, default: '' },
+  text:               { type: String },
+  leftImage:          { type: String, default: '' },   // Cloudinary secure URL (was base64)
+  leftImagePublicId:  { type: String, default: null },  // for delete/replace
+  rightImage:         { type: String, default: '' },
+  rightImagePublicId: { type: String, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Banner', bannerSchema);

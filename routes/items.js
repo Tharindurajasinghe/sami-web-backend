@@ -2,6 +2,7 @@
 const router = require('express').Router();
 const Item   = require('../models/Item');
 const { protect, adminOnly } = require('../middleware/auth');
+const { isBase64DataUrl, uploadImage, deleteImage } = require('../utils/cloudinaryUpload');
 
 // GET /api/items?categoryId=xxx — public
 router.get('/', async (req, res) => {
@@ -19,10 +20,19 @@ router.post('/', protect, adminOnly, async (req, res) => {
     if (!name?.trim() || !categoryId || price == null)
       return res.status(400).json({ message: 'categoryId, name, price required' });
 
+    let imageUrl = null, imagePublicId = null;
+    if (isBase64DataUrl(image)) {
+      const uploaded = await uploadImage(image, 'shop/items');
+      imageUrl = uploaded.url;
+      imagePublicId = uploaded.publicId;
+    }
+
     const item = await Item.create({
       categoryId, name: name.trim(), nameSi: nameSi?.trim() || '',
       price: Number(price), discount: Number(discount || 0),
-      available: available !== false, image: image || null,
+      available: available !== false,
+      image: imageUrl,
+      imagePublicId,
     });
     res.status(201).json(item);
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -33,13 +43,27 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     const { name, nameSi, categoryId, price, discount, available, image } = req.body;
     const update = {};
-    if (name      !== undefined) update.name      = name.trim();
-    if (nameSi    !== undefined) update.nameSi    = nameSi.trim();
-    if (categoryId !== undefined) update.categoryId = categoryId;
-    if (price     !== undefined) update.price     = Number(price);
-    if (discount  !== undefined) update.discount  = Number(discount);
-    if (available !== undefined) update.available = available;
-    if (image     !== undefined) update.image     = image;
+    if (name       !== undefined) update.name       = name.trim();
+    if (nameSi     !== undefined) update.nameSi      = nameSi.trim();
+    if (categoryId !== undefined) update.categoryId  = categoryId;
+    if (price      !== undefined) update.price       = Number(price);
+    if (discount   !== undefined) update.discount    = Number(discount);
+    if (available  !== undefined) update.available   = available;
+
+    if (isBase64DataUrl(image)) {
+      // New image selected — upload it, then clean up the old Cloudinary file
+      const existing = await Item.findById(req.params.id);
+      const uploaded  = await uploadImage(image, 'shop/items');
+      update.image = uploaded.url;
+      update.imagePublicId = uploaded.publicId;
+      if (existing?.imagePublicId) await deleteImage(existing.imagePublicId);
+    } else if (image === null || image === '') {
+      const existing = await Item.findById(req.params.id);
+      if (existing?.imagePublicId) await deleteImage(existing.imagePublicId);
+      update.image = null;
+      update.imagePublicId = null;
+    }
+    // image === undefined → admin didn't touch the image, leave as-is
 
     const item = await Item.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!item) return res.status(404).json({ message: 'Item not found' });
@@ -50,7 +74,8 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
 // DELETE /api/items/:id — admin only
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
-    await Item.findByIdAndDelete(req.params.id);
+    const item = await Item.findByIdAndDelete(req.params.id);
+    if (item?.imagePublicId) await deleteImage(item.imagePublicId);
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
